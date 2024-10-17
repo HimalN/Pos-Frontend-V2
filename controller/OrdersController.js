@@ -402,7 +402,7 @@ $('#updateOrders').on('click',function () {
 
     oOb.orderId = orderId;
     oOb.date = orderDate;
-    oOb.customerId = customerId;
+    oOb.customerID = customerId;
     oOb.cName = customerName;
     oOb.address = address;
     oOb._tp = tp;

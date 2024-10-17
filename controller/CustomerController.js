@@ -1,7 +1,6 @@
-import CustomerModel from "../model/CustomerModel.js";
-import {customers} from "../db/db.js";
-var recordIndexCustomers;
+var recordIndexCustomers ;
 
+loadCustomerTable();
 /****THE VALIDATION STARTS HERE****/
 
 var ValidCustomerID = $("#inputCId")
@@ -104,15 +103,27 @@ function validCustomer() {
 
 function loadCustomerTable() {
     $("#customers-table-tb").empty();
-
-    customers.map((item, index) => {
-       var customerRecord = `<tr>
-                        <td class="c-id">${item.id}</td>
-                        <td class="c-name">${item.name}</td>
-                        <td class="c-address">${item.address}</td>
-                        <td class="c-phoneNumber">${item.telephone}</td>
-                    </tr>`
-        $('#customers-table-tb').append(customerRecord);
+    $.ajax({
+        url: "http://localhost:8081/api/v1/customers",
+        type: "GET",
+        dataType:'Json',
+        success: function (results) {
+            $('#customer-table').empty();
+            results.forEach(function (post) {
+                var record = `<tr>
+                                <td class = "id">${post.id}</td>     
+                                <td class = "name">${post.name}</td>
+                                <td class = "address">${post.address}</td>     
+                                <td class = "phoneNumber">${post.phone}</td>
+                            </tr>`;
+                $('#customers-table-tb').append(record);
+            });
+            $('#customerCount').text(results.length);
+        },
+        error: function (error) {
+            console.log(error);
+            alert("An error occurred while fetching the posts.");
+        }
     });
 }
 
@@ -130,10 +141,10 @@ $('#clearAllCustomers').on('click',() => {
 $('#customers-table-tb').on('click','tr',function () {
     recordIndexCustomers = $(this).index();
 
-    var id = $(this).find(".c-id").text();
-    var name = $(this).find(".c-name").text();
-    var address = $(this).find(".c-address").text();
-    var phoneNumber = $(this).find(".c-phoneNumber").text();
+    var id = $(this).find("td:eq(0)").text();
+    var name = $(this).find("td:eq(1)").text();
+    var address = $(this).find("td:eq(2)").text();
+    var phoneNumber = $(this).find("td:eq(3)").text();
 
     $('#inputCId').val(id);
     $('#inputCName').val(name);
@@ -152,12 +163,44 @@ $('#saveCustomer').on('click', () => {
         validCustomer();
         return;
     }
-    let customerModel = new CustomerModel(customerID, customerName, customerAddress,phoneNumber);
-    customers.push(customerModel);
-    defaultBorderColor();
-    emptyPlaceHolder();
-    loadCustomerTable();
-    clearAll()
+
+
+    $.ajax({
+        url: "http://localhost:8081/api/v1/customers/"+customerID,
+        type: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        success:  (res) =>{
+            if (res && JSON.stringify(res).toLowerCase().includes("not found")) {
+                var form = new FormData();
+                form.append("customerID", customerID);
+                form.append("customerName", customerName);
+                form.append("customerAddress", customerAddress);
+                form.append("phoneNumber", phoneNumber);
+
+                var settings = {
+                    "url": "http://localhost:8081/api/v1/customers",
+                    "method": "POST",
+                    "timeout": 0,
+                    "processData": false,
+                    "mimeType": "multipart/form-data",
+                    "contentType": false,
+                    "data": form
+                };
+
+                $.ajax(settings).done(function (response) {
+                    console.log(response);
+                });
+                alert("Customer Added");
+                loadCustomerTable();
+            } else {
+                alert("Customer ID already exists");
+            }
+
+        }
+        }
+    )
 });
 
 $('#deleteCustomer').on('click',() => {

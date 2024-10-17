@@ -1,6 +1,3 @@
-import ItemModel from '../model/ItemsModel.js';
-import {items} from "../db/db.js";
-export {loadItemTable}
 var recordIndexItems;
 
 var ValidItemID = $("#inputiId")
@@ -50,7 +47,6 @@ $(ValidItemWei).on("input", function () {
 
 function loadItemTable() {
     $("#items-table-tb").empty();
-
     items.map((item,index) => {
         var itemRecord = `<tr>
                         <td class="i-id">${item.id}</td>

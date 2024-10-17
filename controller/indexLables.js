@@ -1,5 +1,3 @@
-import {orders,items,customers} from "../db/db.js";
-
 $("#nav-home").eq(0).on('click', ()=>{
     totalOrders();
     totalCustomers();
