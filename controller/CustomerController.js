@@ -229,20 +229,44 @@ $('#updatedCustomer').on('click',() => {
     var customerAddress = $('#inputAddress').val();
     var phoneNumber = $('#inputTp').val();
 
-    if (customerID === "" || !isValidCustomerName.test(customerName) || !isValidCustomerAddress.test(customerAddress) || !isValidPhoneNumber.test(phoneNumber)) {
-        validCustomer();
-        return;
-    }
+    $.ajax({
+        url:"http://localhost:8081/api/v1/customers/"+customerID,
+        type:"GET",
+        headers: {"Content-type": "application/json"},
+        success: (res) => {
+            if (res && JSON.stringify(res).toLowerCase().includes("not found")) {
+                alert("Customer ID not found");
+            } else {
+                var form = new FormData();
+                form.append("customerId", customerID);
+                form.append("customerName", customerName);
+                form.append("customerAddress", customerAddress);
+                form.append("customerPhone", phoneNumber);
 
-    var cOb = customers[recordIndexCustomers];
-    cOb.id = customerID;
-    cOb.name = customerName;
-    cOb.address = customerAddress;
-    cOb.telephone = phoneNumber;
+                var settings = {
+                    "url": "http://localhost:8081/api/v1/customers",
+                    "method": "PATCH",
+                    "timeout": 0,
+                    "processData": false,
+                    "mimeType": "multipart/form-data",
+                    "contentType": false,
+                    "data": form
+                };
 
+                $.ajax(settings).done(function (response) {
+                    console.log(response);
+                    console.log("Customer Updated");
+                    alert("Customer Updated");
+                    loadCustomerTable();
+                });
+            }
+        },
+        error: (res) => {
+            console.error(res);
+        }
+    })
     defaultBorderColor();
     emptyPlaceHolder();
     loadCustomerTable();
     clearAll();
-    /*totalCustomers();*/
 });
