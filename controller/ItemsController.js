@@ -283,21 +283,42 @@ $('#updateItems').on('click',() => {
     var itemPrice = $('#inputPrice').val();
     var itemQty = $('#inputQty').val();
 
-    if (itemID === "" || !isValidItemNameAndCategory.test(itemName) || !isValidPriceAndQty.test(itemPrice) || !isValidPriceAndQty.test(itemQty)
-        || !isValidItemNameAndCategory.test(itemCat) || !isValidPriceAndQty.test(itemWei)) {
-        validItem();
-        return false;
-    }
+    $.ajax({
+        url: "http://localhost:8081/api/v1/products/"+itemID,
+        type: "GET",
+        headers: {"Content-Type": "application/json"},
+        success: (res) => {
+            if (res && JSON.stringify(res).toLowerCase().includes("not found")) {
+                alert("Product not found");
+            } else{
+                var form = new FormData();
+                form.append("id", itemID);
+                form.append("name", itemName);
+                form.append("type", itemCat);
+                form.append("weight", itemWei);
+                form.append("price", itemPrice);
+                form.append("qty", itemQty);
 
-    var iOb = items[recordIndexItems];
-    iOb.id = itemID;
-    iOb.name = itemName;
-    iOb.category = itemCat;
-    iOb.weight = itemWei;
-    iOb.price = itemPrice;
-    iOb.qty = itemQty;
+                var settings = {
+                    "url": "http://localhost:8081/api/v1/products",
+                    "method": "PATCH",
+                    "timeout": 0,
+                    "processData": false,
+                    "mimeType": "multipart/form-data",
+                    "contentType": false,
+                    "data": form
+                };
 
-    loadItemTable();
+                $.ajax(settings).done(function (response) {
+                    console.log(response);
+                    loadItemTable();
+                    alert("Product Updated Successfully");
+                });
+            }
+        },
+        error: (res) => {
+            console.error(res);
+        }
+    });
     clearAll();
-    /*totalItems();*/
 });
