@@ -93,12 +93,12 @@ $('#clearItems').on('click', () => {
 $('#items-table-tb').on('click','tr',function () {
     recordIndexItems = $(this).index();
 
-    var id = $(this).find(".i-id").text();
-    var name = $(this).find(".i-name").text();
-    var category = $(this).find(".i-category").text();
-    var weight = $(this).find(".i-weight").text();
-    var price = $(this).find(".i-price").text();
-    var qty = $(this).find(".i-qty").text();
+    var id = $(this).find("td:eq(0)").text();
+    var name = $(this).find("td:eq(1)").text();
+    var category = $(this).find("td:eq(2)").text();
+    var weight = $(this).find("td:eq(3)").text();
+    var price = $(this).find("td:eq(4)").text();
+    var qty = $(this).find("td:eq(5)").text();
 
     $('#inputiId').val(id);
     $('#inputName').val(name);
@@ -246,22 +246,33 @@ $('#saveItems').on('click',() => {
 
 $('#deleteItems').on('click',() => {
     var itemID = $('#inputiId').val();
-    var itemName = $('#inputName').val();
-    var itemCat = $('#inputCategory').val();
-    var itemWei = $('#inputweight').val();
-    var itemPrice = $('#inputPrice').val();
-    var itemQty = $('#inputQty').val();
 
-    if (itemID === "" || !isValidItemNameAndCategory.test(itemName) || !isValidPriceAndQty.test(itemPrice) || !isValidPriceAndQty.test(itemQty)
-        || !isValidItemNameAndCategory.test(itemCat) || !isValidPriceAndQty.test(itemWei)) {
-        validItem();
-        return false;
-    }
+    $.ajax({
+        url: "http://localhost:8081/api/v1/products/"+itemID,
+        type: "GET",
+        headers: {"Content-Type": "application/json"},
+        success: (res) => {
+            if (res && JSON.stringify(res).toLowerCase().includes("not found")) {
+                alert("Product not found");
+            } else{
+                var settings = {
+                    "url": "http://localhost:8081/api/v1/products/"+itemID,
+                    "method": "DELETE",
+                    "timeout": 0,
+                };
 
-    items.splice(recordIndexItems,1);
-    loadItemTable();
+                $.ajax(settings).done(function (response) {
+                    console.log(response);
+                    loadItemTable();
+                    alert("Product Deleted Successfully");
+                });
+            }
+        },
+        error: (res) => {
+            console.error(res);
+        }
+    });
     clearAll();
-    /*totalItems();*/
 });
 
 $('#updateItems').on('click',() => {
