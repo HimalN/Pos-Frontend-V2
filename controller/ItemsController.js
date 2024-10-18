@@ -1,5 +1,7 @@
 var recordIndexItems;
 
+loadItemTable();
+
 var ValidItemID = $("#inputiId")
 var ValidItemName = $("#inputName")
 var ValidItemCat = $("#inputCategory")
@@ -47,17 +49,32 @@ $(ValidItemWei).on("input", function () {
 
 function loadItemTable() {
     $("#items-table-tb").empty();
-    items.map((item,index) => {
-        var itemRecord = `<tr>
-                        <td class="i-id">${item.id}</td>
-                        <td class="i-name">${item.itemName}</td>
-                        <td class="i-category">${item.category}</td>
-                        <td class="i-weight">${item.weight}</td>
-                        <td class="i-price">${item.price}</td>
-                        <td class="i-qty">${item.qty}</td>
-                    </tr>`
-        $('#items-table-tb').append(itemRecord);
+    $.ajax({
+        url: "http://localhost:8081/api/v1/products",
+        method: "GET",
+        success: function (results) {
+            $('#items-table-tb').empty();
+            console.log(results);
+            results.forEach(function (post) {
+                var record = `<tr>
+                                <td>${post.productId}</td>     
+                                <td>${post.productName}</td>
+                                <td>${post.productType}</td>     
+                                <td>${post.productWeight}</td>
+                                <td>${post.productPrice}</td>
+                                <td>${post.productQty}</td>
+                            </tr>`;
+                $('#items-table-tb').append(record);
+            });
+            $('#productCount').text(results.length);
+        },
+        error: function (error) {
+            console.log(error);
+            alert("An error occurred while fetching the posts.");
+        }
     });
+
+
 }
 
 function clearAll() {
@@ -179,17 +196,52 @@ $('#saveItems').on('click',() => {
     var itemPrice = $('#inputPrice').val();
     var itemQty = $('#inputQty').val();
 
-    if (itemID === "" || !isValidItemNameAndCategory.test(itemName) || !isValidPriceAndQty.test(itemPrice) || !isValidPriceAndQty.test(itemQty)
+   /* if (itemID === "" || !isValidItemNameAndCategory.test(itemName) || !isValidPriceAndQty.test(itemPrice) || !isValidPriceAndQty.test(itemQty)
         || !isValidItemNameAndCategory.test(itemCat) || !isValidPriceAndQty.test(itemWei)) {
         validItem();
         return false;
-    }
-    let itemModel = new ItemModel(itemID, itemName, itemCat, itemWei, itemPrice, itemQty);
+    }*/
+    $.ajax({
+        url: "http://localhost:8081/api/v1/products/"+itemID,
+        type: "GET",
+        headers: {"Content-Type": "application/json"},
+        success: (res) => {
+            if (res && JSON.stringify(res).toLowerCase().includes("not found")) {
+                var form = new FormData();
+                form.append("id", itemID);
+                form.append("name", itemName);
+                form.append("type", itemCat);
+                form.append("weight", itemWei);
+                form.append("price", itemPrice);
+                form.append("qty", itemQty);
 
-    items.push(itemModel);
+
+                var settings = {
+                    "url": "http://localhost:8081/api/v1/products",
+                    "method": "POST",
+                    "timeout": 0,
+                    "processData": false,
+                    "mimeType": "multipart/form-data",
+                    "contentType": false,
+                    "data": form
+                };
+
+                $.ajax(settings).done(function (response) {
+                    console.log(response);
+                    loadItemTable();
+                    alert("Product Added Successfully");
+                });
+
+            } else{
+                alert("Product already exists");
+            }
+        },
+        error: (res) => {
+            console.error(res);
+        }
+    });
     loadItemTable();
     clearAll();
-    /*totalItems();*/
 });
 
 $('#deleteItems').on('click',() => {
