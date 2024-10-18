@@ -205,21 +205,33 @@ $('#saveCustomer').on('click', () => {
 
 $('#deleteCustomer').on('click',() => {
     var customerID = $('#inputCId').val();
-    var customerName = $('#inputCName').val();
-    var customerAddress = $('#inputAddress').val();
-    var phoneNumber = $('#inputTp').val();
 
-    if (customerID === "" || !isValidCustomerName.test(customerName) || !isValidCustomerAddress.test(customerAddress) || !isValidPhoneNumber.test(phoneNumber)) {
-        validCustomer();
-        return;
-    }
+    $.ajax({
+        url: "http://localhost:8081/api/v1/customers/"+customerID,
+        type: "GET",
+        headers: {"Content-Type": "application/json"},
+        success: (res) => {
+            if (res && JSON.stringify(res).toLowerCase().includes("not found")) {
+                alert("Customer ID not found");
+            } else {
+                var settings = {
+                    url: "http://localhost:8081/api/v1/customers/"+customerID,
+                    "method": "DELETE",
+                    "timeout": 0,
+                };
 
-    customers.splice(recordIndexCustomers,1);
-    defaultBorderColor();
-    emptyPlaceHolder();
-    loadCustomerTable();
+                $.ajax(settings).done(function (response) {
+                    console.log(response);
+                    alert("Customer Deleted");
+                    loadCustomerTable();
+                });
+            }
+        },
+        error: (res) => {
+            console.error(res);
+        }
+    });
     clearAll();
-    /*totalCustomers();*/
 });
 
 $('#updatedCustomer').on('click',() => {
