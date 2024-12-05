@@ -1,7 +1,3 @@
-import OrdersModel from '../model/OrdersModel.js';
-import {orders} from "../db/db.js";
-import {customers} from "../db/db.js";
-import {items} from "../db/db.js";
 import {loadItemTable} from "./ItemsController.js";
 var recordIndexOrders;
 
@@ -85,18 +81,37 @@ function ClearAll() {
     $('#price').val("");
 }
 
-function searchCustomers(term) {
-    const searchTerm = term.toLowerCase();
 
-    for (let i = 0; i < customers.length; i++) {
-        if (searchTerm === customers[i].id.toLowerCase() || searchTerm === customers[i].telephone.toLowerCase()) {
-            $('#inputOCId').val(customers[i].id);
-            $('#inputOCName').val(customers[i].name);
-            $('#inputOCAddress').val(customers[i].address);
-            $('#inputOCTp').val(customers[i].telephone);
-            break;
+function searchCustomers(term) {
+    const customerID = term.toLowerCase();
+    $.ajax({
+        url: 'http://localhost:8081/api/v1/orders?customerID=' + customerID,
+        type: 'GET',
+        dataType: 'json',
+        success: (response) => {
+            console.log('Full response:', response);
+            for (let i = 0; i < response.length; i++) {
+                if (customerID === response[i].customerID) {
+                    var customerDTO = response[i]; // Set customerDTO to the matching customer
+                    break; // Exit the loop once a match is found
+                }
+            }
+
+            if (customerDTO) {
+                console.log('Customer retrieved successfully:', customerDTO);
+                $('#inputOCId').val(customerDTO.customerID);
+                $('#inputOCName').val(customerDTO.customer);
+                $('#inputOCAddress').val(customerDTO.customerAddress);
+                $('#inputOCTp').val(customerDTO.phoneNumber);
+
+            } else {
+                console.error('Customer not found');
+            }
+        },
+        error: function(error) {
+            console.error('Error searching customer:', error);
         }
-    }
+    });
 }
 
 $('#inputOCId').on('input', function() {
@@ -105,15 +120,33 @@ $('#inputOCId').on('input', function() {
 });
 
 function searchItems(term) {
-    const searchTerm = term.toLowerCase();
+    const itemID = term.toLowerCase();
+    $.ajax({
+        url: 'http://localhost:8081/api/v1/itemController?itemID=' + itemID,
+        type: 'GET',
+        dataType: 'json',
+        success: (response) => {
+            console.log('Full response:', response);
+            for (let i = 0; i < response.length; i++) {
+                if (itemID === response[i].itemId) {
+                    var itemDTO = response[i]; // Set itemDTO to the matching item
+                    break; // Exit the loop once a match is found
+                }
+            }
 
-    for (let i = 0; i < items.length; i++) {
-        if (searchTerm === items[i].id.toLowerCase() || searchTerm === items[i].itemName.toLowerCase()) {
-            $('#inputOIId').val(items[i].id);
-            $('#inputOIName').val(items[i].itemName);
-            $('#inputOIprice').val(items[i].price);
+            if (itemDTO) {
+                console.log('Item retrieved successfully:', itemDTO);
+                $('#inputOIId').val(itemDTO.itemId);
+                $('#inputOIName').val(itemDTO.itemName);
+                $('#inputOIprice').val(itemDTO.itemPrice);
+            } else {
+                console.error('Item not found');
+            }
+        },
+        error: function(error) {
+            console.error('Error searching item:', error);
         }
-    }
+    });
 }
 
 $('#inputOIId').on('input', function() {
@@ -311,24 +344,34 @@ $('#placeOrder').on('click', function() {
         return false;
     }
 
-    var existingItemIndex = items.findIndex(item => item.id === itemId);
-
-    if (existingItemIndex !== -1) {
-        /*If the item exists, update its quantity*/
-        items[existingItemIndex].qty -= qty;
+    const orderData = {
+        orderId:orderId,
+        customerName:customerName,
+        productName:itemName,
+        productPrice:price,
+        productQTYNeeded:qty,
+        productTotal:total,
+        customerId:customerId,
+        productId:itemId
     }
 
-    var existingOrderIndex = orders.findIndex(order => order.customerId === customerId && order.itemId === itemId);
+    const orderJSON = JSON.stringify(orderData);
+    console.log(orderData);
 
-    if (existingOrderIndex !== -1) {
-        /*If the order already exists for the same customer and item, update it*/
-        orders[existingOrderIndex].qty += parseInt(qty);
-        orders[existingOrderIndex].total += total;
-    } else {
-        /*If the order doesn't exist, create a new one*/
-        let orderModel = new OrdersModel(orderId,orderDate,customerId,customerName,address,tp,itemId,itemName,qty,price,total);
-        orders.push(orderModel);
-    }
+    $.ajax({
+        url: 'http://localhost:8081/api/v1/orders',
+        type: 'POST',
+        data: orderJSON,
+        headers: {'Content-Type': 'application/json'},
+        success: (res) => {
+            console.log(JSON.stringify(res));
+            loadOrderTable();
+        },
+        error: (res) => {
+            console.error(res);
+            console.log("Order did not Saved");
+        }
+    });
 
     emptyPlaceHolder();
     defaultBorderColor();
@@ -365,7 +408,20 @@ $('#deleteOrders').on('click', function () {
         validOrder();
         return false;
     }
-    orders.splice(recordIndexOrders,1);
+
+    $.ajax({
+        url: 'http://localhost:8081/api/v1/orders/' + orderId + '/' + itemId + '/' + qty,
+        type: 'DELETE',
+        success: (res) => {
+            console.log(JSON.stringify(res));
+            loadOrderTable();
+        },
+        error: (res) => {
+            console.error(res);
+            console.log("Order Not Deleted");
+        }
+    });
+
     emptyPlaceHolder();
     defaultBorderColor();
     loadOrderTable();

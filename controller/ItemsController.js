@@ -1,5 +1,5 @@
 var recordIndexItems;
-
+export {loadItemTable}
 loadItemTable();
 
 var ValidItemID = $("#inputiId")
